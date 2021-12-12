@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<style>
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+    <head>
+        <title>Ladder Lock</title>
+    </head>
+	<script>
+		function swap()
+		{
+			var pic;
+			var id = document.getElementById("sid").value;
+			document.getElementById("sid").value = '';
+			
+			  if (id == 123) {
+				pic = "unlocked.png"
+			  } else {
+				pic = "locked.png"
+			  }
+			
+			document.getElementById("imgId").src = pic;
+		}
+	</script>
+		
+    <body>
+        <h1 style="text-align: center;">Ladder Lock Demo</h1>
+		<h2>Enter Swipe ID:</h2>
+
+		<label for="sid">Swipe ID:</label><br />
+		<input type="text" id="sid" name="sid"  />
+		<button type="button" onclick="swap()">Submit</button>
+
+		<h2 style = "text-align:center;">
+		Lock Status
+		</h2>
+		
+		
+		<img src="locked.png" alt="STATUS:LOCKED" id="imgId">
+
+	
+    </body>
+
+</html>
