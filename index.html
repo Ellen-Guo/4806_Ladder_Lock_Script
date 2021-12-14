@@ -12,29 +12,53 @@ img {
         <title>Ladder Lock</title>
     </head>
 	<script>
-		function swap()
+		var isLocked = true;
+		var isClosed = true;
+		
+		function swiped()
 		{
 			var pic;
 			var id = document.getElementById("sid").value;
 			document.getElementById("sid").value = '';
 			
-			  if (id == 123) {
-				pic = "unlocked.png"
-			  } else {
-				pic = "locked.png"
+			  if (id == 123 && isLocked == true && isClosed == true) {
+				pic = "unlocked.png";
+				isLocked = false;
+			  } else if(id == 123 && isLocked == false && isClosed == true){
+				pic = "locked.png";
+				isLocked = true;
+			  } else if(id != 123 && isLocked == true && isClosed == true){
+				pic = "locked.png";
+				isLocked = true;
+			  } else if(id != 123 && isLocked == false && isClosed == true){
+				pic = "unlocked.png";
+				isLocked = false;
+			  } else if(id == 123 && isLocked == false && isClosed == false){
+				pic = "unlocked.png";
+				isLocked = false;
+			  } else if(id != 123 && isLocked == false && isClosed == false){
+				pic = "unlocked.png";
+				isLocked = false;
 			  }
-			
+				
 			document.getElementById("imgId").src = pic;
+		}
+		function moveHatch()
+		{
+			if(isClosed == false) {
+				isClosed = true;
+			} else if(isClosed == true && isLocked == false){
+				isClosed = false;
+			}
 		}
 	</script>
 		
     <body>
         <h1 style="text-align: center;">Ladder Lock Demo</h1>
 		<h2>Enter Swipe ID:</h2>
-
 		<label for="sid">Swipe ID:</label><br />
 		<input type="text" id="sid" name="sid"  />
-		<button type="button" onclick="swap()">Submit</button>
+		<button type="button" onclick="swiped()">Submit</button>
 
 		<h2 style = "text-align:center;">
 		Lock Status
@@ -42,8 +66,10 @@ img {
 		
 		
 		<img src="locked.png" alt="STATUS:LOCKED" id="imgId">
-
-	
+		
+		<h2>Hatch Position:</h2>
+		<button type="button" onclick="moveHatch()">Toggle</button>
+		
     </body>
 
 </html>
