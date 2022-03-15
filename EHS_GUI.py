@@ -1,67 +1,111 @@
 import requests
-import numpy as np
 import sys
 from bs4 import BeautifulSoup
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QScrollArea, QFormLayout, QGroupBox, \
-    QVBoxLayout, QLabel, QCheckBox, QButtonGroup
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVBoxLayout, QLabel, QComboBox, QHBoxLayout
 
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
 
 
 class EHSWindow(QMainWindow):  # EHS GUI Class
 
+    # class constructor
     def __init__(self):
         super().__init__()
         self.title = "EHS Safety Application"
         self.setWindowTitle(self.title)
+        self.home()
 
+    # EHS GUI main app page **** Building Selection ****
+    def home(self):
+        # instantiation
         widget = QWidget()
-
-        form_layout = QFormLayout()
-        group_box = QGroupBox()
-
-        label_list = []
-        buildings = scrape()
-
-        for i in range(len(buildings)):
-            label_list.append(QCheckBox(buildings[i]))
-            form_layout.addRow(label_list[i])
-
-        group_box.setLayout(form_layout)
-        scroll = QScrollArea()
-        scroll.setWidget(group_box)
-        scroll.setWidgetResizable(True)
-        scroll.setFixedHeight(400)
-
-        layout = QVBoxLayout()
-        layout.addWidget(scroll)
-
-        widget.setLayout(layout)
+        vbox = QVBoxLayout()
+        hbox = QHBoxLayout()
+        # widget objects
+        self.prompt = QLabel("Which building's health and safety information do you want?")  # label above the combobox
+        self.button = QPushButton('OK')  # button
+        self.combo = QComboBox()
+        # add building names to the dropdown menu
+        buildings = build_list()
+        for i in buildings:
+            self.combo.addItem(i)
+        # ********* GUI Homepage Layout **********
+        # _________________________________
+        # |         |           |          |
+        # |_________|___________|__________|
+        # |          [Prompt]              |
+        # |__________[ComboBox]____________|
+        # |         |           |          |
+        # |         |           |          |
+        # |_________|___________|_[Button]_|
+        vbox.addStretch(2)
+        vbox.addWidget(self.prompt)
+        vbox.addWidget(self.combo)
+        vbox.addStretch(2)
+        hbox.addStretch(2)
+        hbox.addWidget(self.button)
+        vbox.addLayout(hbox)
+        # set widget layout
+        widget.setLayout(vbox)
         self.setCentralWidget(widget)
+        self.button.clicked.connect(self.on_click)
+
+    def on_click(self):
+        self.clear()
+        soup = query()
+        content = soup.find("div", {"class": "content-block"}).findAll("tr")
+        building_list = build_list()
+        building = self.combo.currentText()
+        ind = building_list.index(building)  # get index of list
+        types = hazard_type()
+        hazards = []
+        c = len(content[0].findAll("td"))
+        for j in range(c-1):  # scrap hazard information from table on EHS website
+            hazards.append(content[ind + 1].findAll("td")[j+1].getText().replace('\n', ' '))
+        print(types)
+        print(hazards)
+
+    # clear widgets from layout
+    def clear(self):
+        self.button.setParent(None)
+        self.prompt.setParent(None)
+        self.combo.setParent(None)
 
 
-def scrape():
+# query EHS website for content
+def query():
     r = requests.get(url=EHS_url)
-    soup = BeautifulSoup(r.content, 'html.parser')
-    last_update_date = soup.find("div", {"class": "content-block"}).find("caption").getText(). \
-        replace('\r\n                    ', '')  # obtain caption element; remove extra space in the caption element tag
-    print(last_update_date)
+    return BeautifulSoup(r.content, 'html.parser')
+
+
+# scrap website content and gather all the building names
+def build_list():
+    soup = query()
     content = soup.find("div", {"class": "content-block"}).findAll("tr")  # obtain rows of the hazard table
     r = len(content)
-    columns = content[0].findAll("td")
     building_name = []
     for i in range(r-1):
         building_name.append(content[i+1].find("td").getText())  # Scrap all the building names into a list
-    print("hello")
-    # for i in range(r):
-    #     for j in range(c):
-    #         labels = content[i].findAll("td")[j].getText().replace('\n', ' ')
-    #         table_content[i, j] = labels
-    #         print("hello")
-    # print(labels)
-    # print("hello")
     return building_name
+
+
+# Parse hazard types as show on table
+def hazard_type():
+    soup = query()
+    content = soup.find("div", {"class": "content-block"}).findAll("tr")
+    c = len(content[0].findAll("td"))
+    types = []
+    for i in range(c-1):
+        types.append(content[0].findAll("td")[i+1].getText().replace('\n', ' '))
+    return types
+
+
+# Return last updated information of website
+def date():
+    soup = query()
+    last_update_date = soup.find("div", {"class": "content-block"}).find("caption").getText(). \
+        replace('\r\n                    ', '')  # obtain caption element; remove extra space in the caption element tag
+    return last_update_date
 
 
 def main():
