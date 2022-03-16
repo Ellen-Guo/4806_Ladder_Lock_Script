@@ -86,7 +86,6 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         # |          [Building]            |
         # |_________[Information]__________|
         # |         |           |          |
-        # |         |           |          |
         # |_________|___________|__________|
         vbox.addStretch(2)
         vbox.addWidget(self.building_name)
