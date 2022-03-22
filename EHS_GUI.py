@@ -2,8 +2,10 @@ import requests
 import sys
 from bs4 import BeautifulSoup
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVBoxLayout, QLabel, \
-    QComboBox, QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox, QScrollArea, QFormLayout
-from PyQt5.QtGui import QFont
+    QComboBox, QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox, QScrollArea, \
+    QFormLayout, QAbstractItemView
+from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtCore import Qt
 
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
 
@@ -23,6 +25,13 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         widget = QWidget()
         vbox = QVBoxLayout()
         hbox = QHBoxLayout()
+        hbox1 = QHBoxLayout()
+        # VT Logo
+        image_path = ('/Users/ellenguo/PycharmProjects/EHS/VT_logo.png')
+        self.image_label = QLabel()
+        pixmap = QPixmap(image_path)
+        pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.image_label.setPixmap(pixmap)
         # widget objects
         self.prompt = QLabel("Which building's health and safety information do you want?")  # label above the combobox
         self.button = QPushButton('OK')  # button
@@ -31,35 +40,55 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         buildings = build_list()
         for i in buildings:
             self.combo.addItem(i)
+        # ********* Setting Color ***************
+        self.prompt.setStyleSheet("QLabel {color: rgb(232, 119, 34);}")
+        self.button.setStyleSheet("QPushButton {color: rgb(232, 119, 34)}")
+        self.combo.setStyleSheet("""QComboBox {
+        selection-background-color: rgb(134, 31, 65); 
+        selection-color: rgb(255, 255, 255);}""")
         # ********* GUI Homepage Layout **********
         # _________________________________
-        # |         |           |          |
+        # |         | [VT Logo] |          |
         # |_________|___________|__________|
         # |          [Prompt]              |
         # |__________[ComboBox]____________|
         # |         |           |          |
         # |         |           |          |
         # |_________|___________|_[Button]_|
+        hbox.addStretch(2)
+        hbox.addWidget(self.image_label)
+        hbox.addStretch(2)
+        vbox.addLayout(hbox)
         vbox.addStretch(2)
         vbox.addWidget(self.prompt)
         vbox.addWidget(self.combo)
         vbox.addStretch(2)
-        hbox.addStretch(2)
-        hbox.addWidget(self.button)
-        vbox.addLayout(hbox)
+        hbox1.addStretch(2)
+        hbox1.addWidget(self.button)
+        vbox.addLayout(hbox1)
         # set widget layout
         widget.setLayout(vbox)
         self.setCentralWidget(widget)
         self.button.clicked.connect(self.on_click)
 
     def on_click(self):
-        self.clear()
+        self.clear_home()  # Clear home screen
         widget = QWidget()
         vbox = QVBoxLayout()
+        hbox = QHBoxLayout()
+        hbox1 = QHBoxLayout()
         soup = query()
-        self.form_layout = QFormLayout()
+        # VT Logo
+        image_path = ('/Users/ellenguo/PycharmProjects/EHS/VT_logo.png')
+        self.image_label = QLabel()
+        pixmap = QPixmap(image_path)
+        pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.image_label.setPixmap(pixmap)
+        # Scrollbox layout
+        form_layout = QFormLayout()
         self.group_box = QGroupBox()
         self.scroll = QScrollArea()
+        self.button = QPushButton('Quit')
         content = soup.find("div", {"class": "content-block"}).findAll("tr")
         building_list = build_list()
         building = self.combo.currentText()
@@ -71,58 +100,59 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
             hazards.append(content[ind + 1].findAll("td")[j+1].getText().replace('\n', ' '))
         # Health & Safety Legend Info from bottom of table
         building_info, hazard_leg = hazard_legend()
-        self.legend_list = []
+        legend_list = []
         # Building Specific Hazards
         if building in building_info:
-            self.legend_list.append(QLabel(building_info.get(building)))
-        # Standard Hazards
+            legend_list.append(QLabel(building_info.get(building)))
+        # Standard Hazards QLabel Creation
         for k in range(len(hazards)):
-            if (hazards[k] != 'N/A') & (hazards[k] != 'No'):
+            if (hazards[k] != 'N/A') & (hazards[k] != 'No') & (hazards[k] != '\xa0'):
                 if k == 0:  # Chemical Hazard
-                    self.legend_list.append(QLabel(hazard_leg.get(types[k].split(" ")[0])))
-                    if hazards[k].split("*")[0] == " Restricted":
-                        self.legend_list.append(QLabel('\t• ' + hazard_leg.get("Restricted Access")))
-                    else:
-                        self.legend_list.append(QLabel('\t• ' + hazard_leg.get(hazards[k].split("*")[0])))
+                    legend_list.append(QLabel(hazard_leg.get(types[k].split(" ")[0])))
+                    if (hazards[k].split("*")[0] == " Restricted") | (hazards[k] == "Restricted"):
+                        legend_list.append(QLabel('\t• ' + hazard_leg.get("Restricted Access")))
+                    elif (hazards[k].split("*")[0] == " Unrestricted") | (hazards[k] == "Unrestricted"):
+                        legend_list.append(QLabel('\t• ' + hazard_leg.get("Unrestricted")))
                 if k == 1:  # Biological Hazard
-                    self.legend_list.append(QLabel(hazard_leg.get("Biological")))
+                    legend_list.append(QLabel(hazard_leg.get("Biological")))
                 if k == 2:  # Radio Frequency Hazard
-                    self.legend_list.append(QLabel(hazard_leg.get("Radio Frequency")))
+                    legend_list.append(QLabel(hazard_leg.get("Radio Frequency")))
                 if k == 3:  # Noise Hazard
-                    self.legend_list.append(QLabel(hazard_leg.get(types[k].split(" ")[0])))
+                    legend_list.append(QLabel(hazard_leg.get(types[k].split(" ")[0])))
                     if hazards[k] == 'Siren':
-                        self.legend_list.append(QLabel('\t• ' + hazard_leg.get(hazards[k]+'s')))
+                        legend_list.append(QLabel('\t• ' + hazard_leg.get(hazards[k]+'s')))
                     else:
-                        self.legend_list.append(QLabel('\t• ' + hazard_leg.get(hazards[k])))
+                        legend_list.append(QLabel('\t• ' + hazard_leg.get(hazards[k])))
                 if k == 4:  # Fall Hazard
-                    self.legend_list.append(QLabel(hazard_leg.get("Fall Hazards")))
+                    legend_list.append(QLabel(hazard_leg.get("Fall Hazards")))
                     if hazards[k].find("&") != -1:
                         fall_haz = hazards[k].replace(' ', '').split("&")
                         for j in fall_haz:
-                            self.legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
+                            legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
                     elif hazards[k].find("and") != -1:
                         fall_haz = hazards[k].replace(' ', '').split("and")
                         for j in fall_haz:
-                            self.legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
+                            legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
                     elif (hazards[k].find("or") != -1) & (hazards[k].find(",") != -1):
                         fall_haz = hazards[k].replace("or ", '').split(",")
                         for j in fall_haz:
-                            self.legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
+                            legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
                     elif hazards[k].find("or") != -1:
                         fall_haz = hazards[k].replace(' ', '').split("or")
                         for j in fall_haz:
-                            self.legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
+                            legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
                     elif hazards[k].find(",") != -1:
                         fall_haz = hazards[k].replace(' ', '').split(",")
                         for j in fall_haz:
-                            self.legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
+                            legend_list.append(QLabel('\t• ' + hazard_leg.get(j)))
                     else:
-                        self.legend_list.append(QLabel('\t• ' + hazard_leg.get(hazards[k])))
+                        legend_list.append(QLabel('\t• ' + hazard_leg.get(hazards[k])))
         # QScrollArea for better viewing of legend information
-        for n in self.legend_list:
+        for n in legend_list:
             n.setFont(QFont('Times'))
-            self.form_layout.addRow(n)
-        self.group_box.setLayout(self.form_layout)
+            n.setStyleSheet("QLabel {color: rgb(255, 255, 255)}")
+            form_layout.addRow(n)
+        self.group_box.setLayout(form_layout)
         self.scroll.setWidget(self.group_box)
         self.scroll.setWidgetResizable(True)
         self.scroll.setFixedHeight(200)
@@ -143,28 +173,110 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.table.horizontalHeader().setVisible(False)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        # ********* Setting Color ***************
+        self.building_name.setStyleSheet("QLabel {color: rgb(232, 119, 34);}")
+        self.leg.setStyleSheet("QLabel {color: rgb(232, 119, 34);}")
+        self.button.setStyleSheet("QPushButton {color: rgb(232, 119, 34)}")
+        self.table.setStyleSheet("""QTableWidget {
+        background-color: rgb(134, 31, 65);
+        color: rgb(255, 255, 255);}""")
+        self.group_box.setStyleSheet("""QGroupBox {
+        background-color: rgb(134, 31, 65); 
+        color: rgb(255, 255, 255)}""")
         # ********* GUI Info Page Layout **********
         # _________________________________
-        # |         |           |          |
+        # |         | [VT Logo] |          |
         # |_________|___________|__________|
         # |          [Building]            |
         # |______[Table Information]_______|
         # |      [Legend Information]      |
-        # |_________|___________|__________|
+        # |_________|___________|__[Quit]__|
+        hbox.addStretch(2)
+        hbox.addWidget(self.image_label)
+        hbox.addStretch(2)
+        vbox.addLayout(hbox)
         vbox.addStretch(2)
         vbox.addWidget(self.building_name)
         vbox.addWidget(self.table)
         vbox.addWidget(self.leg)
         vbox.addWidget(self.scroll)
         vbox.addStretch(2)
+        hbox1.addStretch(2)
+        hbox1.addWidget(self.button)
+        vbox.addLayout(hbox1)
+        # set widget layout
         widget.setLayout(vbox)
         self.setCentralWidget(widget)
+        self.button.clicked.connect(self.return_home)
 
-    # clear widgets from layout
-    def clear(self):
+    # refresher homepage
+    def return_home(self):
+        self.clear_click()
+        # instantiation
+        widget = QWidget()
+        vbox = QVBoxLayout()
+        hbox = QHBoxLayout()
+        hbox1 = QHBoxLayout()
+        # VT Logo
+        image_path = ('/Users/ellenguo/PycharmProjects/EHS/VT_logo.png')
+        self.image_label = QLabel()
+        pixmap = QPixmap(image_path)
+        pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.image_label.setPixmap(pixmap)
+        # widget objects
+        self.prompt = QLabel("Which building's health and safety information do you want?")  # label above the combobox
+        self.button = QPushButton('OK')  # button
+        self.combo = QComboBox()
+        # add building names to the dropdown menu
+        buildings = build_list()
+        for i in buildings:
+            self.combo.addItem(i)
+        # ********* Setting Color ***************
+        self.prompt.setStyleSheet("QLabel {color: rgb(232, 119, 34)}")
+        self.button.setStyleSheet("QPushButton {color: rgb(232, 119, 34)}")
+        self.combo.setStyleSheet("""QComboBox {
+        selection-background-color: rgb(134, 31, 65); 
+        selection-color: rgb(255, 255, 255);}""")
+        # ********* GUI Homepage Layout **********
+        # _________________________________
+        # |         | [VT Logo] |          |
+        # |_________|___________|__________|
+        # |          [Prompt]              |
+        # |__________[ComboBox]____________|
+        # |         |           |          |
+        # |         |           |          |
+        # |_________|___________|_[Button]_|
+        hbox.addStretch(2)
+        hbox.addWidget(self.image_label)
+        hbox.addStretch(2)
+        vbox.addLayout(hbox)
+        vbox.addStretch(2)
+        vbox.addWidget(self.prompt)
+        vbox.addWidget(self.combo)
+        vbox.addStretch(2)
+        hbox1.addStretch(2)
+        hbox1.addWidget(self.button)
+        vbox.addLayout(hbox1)
+        # set widget layout
+        widget.setLayout(vbox)
+        self.setCentralWidget(widget)
+        self.button.clicked.connect(self.on_click)
+
+    # clear widgets from home layout
+    def clear_home(self):
         self.button.setParent(None)
         self.prompt.setParent(None)
         self.combo.setParent(None)
+
+    # clear widgets from Building_info page
+    def clear_click(self):
+        self.button.setParent(None)
+        self.table.setParent(None)
+        self.group_box.setParent(None)
+        self.scroll.setParent(None)
+        self.building_name.setParent(None)
+        self.leg.setParent(None)
 
 
 # query EHS website for content
@@ -184,7 +296,7 @@ def build_list():
     return building_name
 
 
-# Parse hazard types as show on table
+# Parse hazard types as show on table header
 def hazard_type():
     soup = query()
     content = soup.find("div", {"class": "content-block"}).findAll("tr")
@@ -201,6 +313,7 @@ def hazard_legend():
     star_legend = []
     star_dic = {}
     stars = soup.find("div", {"class": "content-block"}).findAll("p")
+    # Special building hazards indicated with stars
     for i in [-3, -2, -1]:
         star_legend.append(stars[i].getText())
     star_dic["Seitz Hall-upper roof (108)"] = star_legend[0]
@@ -208,6 +321,7 @@ def hazard_legend():
     star_dic["Randolph Hall (133)"] = star_legend[2]
     h4_legend = {}
     tags = soup.find("div", {"class": "content-block"}).findAll(["h4", "h4" and "ul" and "li"])
+    # General Building Hazards Listed
     for i in range(len(tags)):
         text = tags[i].getText().replace('   ', ' ')
         if (i == 6) | (i == 7):  # Noise Hazard Parse
