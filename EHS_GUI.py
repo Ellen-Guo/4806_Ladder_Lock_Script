@@ -8,6 +8,13 @@ from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt
 
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
+# 5 Primary VT Colors
+Burnt_orange = 'rgb(232, 119, 34)'
+Burnt_orange_web = 'rgb(198, 70, 0)'
+Chicago_maroon = 'rgb(134, 31, 65)'
+Yardline_white = 'rgb(255, 255, 255)'
+Hokie_stone = 'rgb(117, 120, 123)'
+Black = 'rgb(0, 0, 0)'
 
 
 class EHSWindow(QMainWindow):  # EHS GUI Class
@@ -33,7 +40,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(pixmap)
         # widget objects
-        self.prompt = QLabel("Which building's health and safety information do you want?")  # label above the combobox
+        self.prompt = QLabel("Select Building Name: ")  # label above the combobox
         self.button = QPushButton('OK')  # button
         self.combo = QComboBox()
         # add building names to the dropdown menu
@@ -41,11 +48,11 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         for i in buildings:
             self.combo.addItem(i)
         # ********* Setting Color ***************
-        self.prompt.setStyleSheet("QLabel {color: rgb(232, 119, 34);}")
-        self.button.setStyleSheet("QPushButton {color: rgb(232, 119, 34)}")
+        self.prompt.setStyleSheet("QLabel {color: %s}" % Chicago_maroon)
+        self.button.setStyleSheet("QPushButton {color: %s}" % Chicago_maroon)
         self.combo.setStyleSheet("""QComboBox {
-        selection-background-color: rgb(134, 31, 65); 
-        selection-color: rgb(255, 255, 255);}""")
+        selection-background-color: %s; 
+        selection-color: %s;}""" % (Burnt_orange, Yardline_white))
         # ********* GUI Homepage Layout **********
         # _________________________________
         # |         | [VT Logo] |          |
@@ -175,15 +182,15 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         # ********* Setting Color ***************
-        self.building_name.setStyleSheet("QLabel {color: rgb(232, 119, 34);}")
-        self.leg.setStyleSheet("QLabel {color: rgb(232, 119, 34);}")
-        self.button.setStyleSheet("QPushButton {color: rgb(232, 119, 34)}")
+        self.building_name.setStyleSheet("QLabel {color: %s}" % Burnt_orange_web)
+        self.leg.setStyleSheet("QLabel {color: %s}" % Burnt_orange_web)
+        self.button.setStyleSheet("QPushButton {color: %s}" % Burnt_orange_web)
         self.table.setStyleSheet("""QTableWidget {
-        background-color: rgb(134, 31, 65);
-        color: rgb(255, 255, 255);}""")
+        background-color: %s;
+        color: %s}""" % (Chicago_maroon, Yardline_white))
         self.group_box.setStyleSheet("""QGroupBox {
-        background-color: rgb(134, 31, 65); 
-        color: rgb(255, 255, 255)}""")
+        background-color: %s; 
+        color: %s}""" % (Chicago_maroon, Yardline_white))
         # ********* GUI Info Page Layout **********
         # _________________________________
         # |         | [VT Logo] |          |
@@ -225,7 +232,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(pixmap)
         # widget objects
-        self.prompt = QLabel("Which building's health and safety information do you want?")  # label above the combobox
+        self.prompt = QLabel("Select Building Name: ")  # label above the combobox
         self.button = QPushButton('OK')  # button
         self.combo = QComboBox()
         # add building names to the dropdown menu
@@ -233,11 +240,11 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         for i in buildings:
             self.combo.addItem(i)
         # ********* Setting Color ***************
-        self.prompt.setStyleSheet("QLabel {color: rgb(232, 119, 34)}")
-        self.button.setStyleSheet("QPushButton {color: rgb(232, 119, 34)}")
+        self.prompt.setStyleSheet("QLabel {color: %s}" % Chicago_maroon)
+        self.button.setStyleSheet("QPushButton {color: %s}" % Chicago_maroon)
         self.combo.setStyleSheet("""QComboBox {
-        selection-background-color: rgb(134, 31, 65); 
-        selection-color: rgb(255, 255, 255);}""")
+        selection-background-color: %s; 
+        selection-color: %s}""" % (Burnt_orange, Yardline_white))
         # ********* GUI Homepage Layout **********
         # _________________________________
         # |         | [VT Logo] |          |
