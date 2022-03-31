@@ -14,7 +14,6 @@ img {
 	<script>
 		var isLocked = true;
 		var isClosed = true;
-		
 		function swiped()
 		{
 			var pic;
@@ -47,8 +46,13 @@ img {
 		{
 			if(isClosed == false) {
 				isClosed = true;
+				document.getElementById("hatch").value = 'closed';
 			} else if(isClosed == true && isLocked == false){
 				isClosed = false;
+				document.getElementById("hatch").value = 'open';
+			}
+			else{
+				document.getElementById("hatch").value = 'closed';
 			}
 		}
 	</script>
@@ -65,10 +69,12 @@ img {
 		</h2>
 		
 		
-		<img src="locked.png" alt="STATUS:LOCKED" id="imgId">
+		<img src="locked.png" alt="STATUS:LOCKED" id="imgId"width="200" height="auto">
 		
 		<h2>Hatch Position:</h2>
+		<h3><output id="hatch"></output></h2>
 		<button type="button" onclick="moveHatch()">Toggle</button>
+		
 		
     </body>
 

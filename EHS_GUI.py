@@ -8,6 +8,7 @@ from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt
 
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
+
 # 5 Primary VT Colors
 Burnt_orange = 'rgb(232, 119, 34)'
 Burnt_orange_web = 'rgb(198, 70, 0)'
