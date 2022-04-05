@@ -35,7 +35,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         hbox = QHBoxLayout()
         hbox1 = QHBoxLayout()
         # VT Logo
-        image_path = ('/Users/ellenguo/PycharmProjects/EHS/VT_logo.png')
+        image_path = ('VT_logo.png')
         self.image_label = QLabel()
         pixmap = QPixmap(image_path)
         pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -87,7 +87,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         hbox1 = QHBoxLayout()
         soup = query()
         # VT Logo
-        image_path = ('/Users/ellenguo/PycharmProjects/EHS/VT_logo.png')
+        image_path = ('VT_logo.png')
         self.image_label = QLabel()
         pixmap = QPixmap(image_path)
         pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
