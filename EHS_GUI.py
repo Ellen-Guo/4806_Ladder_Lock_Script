@@ -1,11 +1,13 @@
 import requests
 import sys
+import time
+from psygnal import Signal
 from bs4 import BeautifulSoup
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVBoxLayout, QLabel, \
     QComboBox, QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox, QScrollArea, \
     QFormLayout, QAbstractItemView
 from PyQt5.QtGui import QFont, QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, QCoreApplication, QObject
 
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
 
@@ -19,27 +21,20 @@ Black = 'rgb(0, 0, 0)'
 
 
 class EHSWindow(QMainWindow):  # EHS GUI Class
-
-    # class constructor
+    # Main Window Class Constructor
     def __init__(self):
         super().__init__()
         self.title = "EHS Safety Application"
         self.setWindowTitle(self.title)
+        # Evoke main EHS GUI code
         self.home()
+        # Evoke background lock status update thread
+        self.lock_update()
 
     # EHS GUI main app page **** Building Selection ****
     def home(self):
-        # instantiation
-        widget = QWidget()
-        vbox = QVBoxLayout()
-        hbox = QHBoxLayout()
-        hbox1 = QHBoxLayout()
-        # VT Logo
-        image_path = ('VT_logo.png')
-        self.image_label = QLabel()
-        pixmap = QPixmap(image_path)
-        pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.image_label.setPixmap(pixmap)
+        self.show_vt()  # VT Logo Qt Label Widget
+        self.lock_stat()  # Lock status Qt Label Widget
         # widget objects
         self.prompt = QLabel("Select Building Name: ")  # label above the combobox
         self.button = QPushButton('OK')  # button
@@ -55,29 +50,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         selection-background-color: %s; 
         selection-color: %s;}""" % (Burnt_orange, Yardline_white))
         # ********* GUI Homepage Layout **********
-        # _________________________________
-        # |         | [VT Logo] |          |
-        # |_________|___________|__________|
-        # |          [Prompt]              |
-        # |__________[ComboBox]____________|
-        # |         |           |          |
-        # |         |           |          |
-        # |_________|___________|_[Button]_|
-        hbox.addStretch(2)
-        hbox.addWidget(self.image_label)
-        hbox.addStretch(2)
-        vbox.addLayout(hbox)
-        vbox.addStretch(2)
-        vbox.addWidget(self.prompt)
-        vbox.addWidget(self.combo)
-        vbox.addStretch(2)
-        hbox1.addStretch(2)
-        hbox1.addWidget(self.button)
-        vbox.addLayout(hbox1)
-        # set widget layout
-        widget.setLayout(vbox)
-        self.setCentralWidget(widget)
-        self.button.clicked.connect(self.on_click)
+        self.home_screen()
 
     def on_click(self):
         self.clear_home()  # Clear home screen
@@ -86,12 +59,6 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         hbox = QHBoxLayout()
         hbox1 = QHBoxLayout()
         soup = query()
-        # VT Logo
-        image_path = ('VT_logo.png')
-        self.image_label = QLabel()
-        pixmap = QPixmap(image_path)
-        pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.image_label.setPixmap(pixmap)
         # Scrollbox layout
         form_layout = QFormLayout()
         self.group_box = QGroupBox()
@@ -210,6 +177,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.leg)
         vbox.addWidget(self.scroll)
         vbox.addStretch(2)
+        hbox1.addWidget(self.c_lock_stat)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -221,17 +189,6 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     # refresher homepage
     def return_home(self):
         self.clear_click()
-        # instantiation
-        widget = QWidget()
-        vbox = QVBoxLayout()
-        hbox = QHBoxLayout()
-        hbox1 = QHBoxLayout()
-        # VT Logo
-        image_path = ('/Users/ellenguo/PycharmProjects/EHS/VT_logo.png')
-        self.image_label = QLabel()
-        pixmap = QPixmap(image_path)
-        pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.image_label.setPixmap(pixmap)
         # widget objects
         self.prompt = QLabel("Select Building Name: ")  # label above the combobox
         self.button = QPushButton('OK')  # button
@@ -246,6 +203,15 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.combo.setStyleSheet("""QComboBox {
         selection-background-color: %s; 
         selection-color: %s}""" % (Burnt_orange, Yardline_white))
+        # ********* GUI Homepage Layout **********
+        self.home_screen()
+
+    def home_screen(self):
+        # instantiation
+        widget = QWidget()
+        vbox = QVBoxLayout()
+        hbox = QHBoxLayout()
+        hbox1 = QHBoxLayout()
         # ********* GUI Homepage Layout **********
         # _________________________________
         # |         | [VT Logo] |          |
@@ -263,6 +229,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.prompt)
         vbox.addWidget(self.combo)
         vbox.addStretch(2)
+        hbox1.addWidget(self.c_lock_stat)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -285,6 +252,63 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.scroll.setParent(None)
         self.building_name.setParent(None)
         self.leg.setParent(None)
+
+    # VT Logo
+    def show_vt(self):
+        image_path = ('VT_logo.png')
+        self.image_label = QLabel()
+        pixmap = QPixmap(image_path)
+        pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.image_label.setPixmap(pixmap)
+
+    # lock status items **** Loading of images
+    def lock_stat(self):
+        locked = ('locked.png')
+        unlocked = ('unlocked.png')
+        self.c_lock_stat = QLabel()
+        self.plock = QPixmap(locked).scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.punlock = QPixmap(unlocked).scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.c_lock_stat.setPixmap(self.plock)
+
+    # Instantiate background running QThread for lock update
+    def lock_update(self):
+        QCoreApplication.processEvents()
+        self.thread = QThread()
+        self.worker = LockThread()
+        self.worker.moveToThread(self.thread)
+        # connect signal with pad lock updating function
+        self.worker.signals.update_lock.connect(self.lock_status)
+
+    # update pad lock icon based on signal emitted
+    def lock_status(self, stat):
+        print("Update lock status")
+        if stat:
+            self.c_lock_stat.setPixmap(self.punlock)
+            print('unlocked')
+        else:
+            self.c_lock_stat.setPixmap(self.plock)
+            print('locked')
+
+
+# All signals must inherit from QObject class
+class Communicate(QObject):
+    update_lock = Signal(bool)  # lock update signal
+
+
+# Lock Update Thread Worker class
+class LockThread(QThread):
+    def __init__(self, parent=None):
+        QThread.__init__(self)
+        self.signals = Communicate()
+        self.start()
+
+    # Infinite lock status background checking loop
+    def run(self):
+        c_lock_status = False
+        while True:
+            c_lock_status = not c_lock_status
+            time.sleep(1)
+            self.signals.update_lock.emit(c_lock_status)
 
 
 # query EHS website for content
