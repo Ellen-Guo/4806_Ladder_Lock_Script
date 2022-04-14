@@ -8,6 +8,11 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVB
     QFormLayout, QAbstractItemView
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt, QThread, QCoreApplication, QObject
+import RPi.GPIO as gpio
+import mariadb
+
+gpio.setmode(gpio.BCM)
+gpio.setup(18,gpio.IN)
 
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
 
@@ -305,10 +310,12 @@ class LockThread(QThread):
     # Infinite lock status background checking loop
     def run(self):
         c_lock_status = False
+        current_status = c_lock_status
         while True:
-            c_lock_status = not c_lock_status
-            time.sleep(1)
-            self.signals.update_lock.emit(c_lock_status)
+            c_lock_status = gpio.input(18) == gpio.HIGH 
+            if current_status != c_lock_status:
+                current_status = c_lock_status
+                self.signals.update_lock.emit(c_lock_status)
 
 
 # query EHS website for content
@@ -378,11 +385,13 @@ def date():
     return last_update_date
 
 
-def main():
+def main():                   
     app = QApplication(sys.argv)
     win = EHSWindow()  # window object
-    win.showFullScreen()  # Display GUI Full screen
+    #win.showFullScreen()  # Display GUI Full screen
+    win.show()
     sys.exit(app.exec_())  # exit
+    
 
 
 # Press the green button in the gutter to run the script.
