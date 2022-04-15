@@ -1,6 +1,5 @@
 import requests
 import sys
-import time
 import socket
 from psygnal import Signal
 from bs4 import BeautifulSoup
@@ -295,14 +294,14 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.worker.signals.update_lock.connect(self.lock_status)
         self.worker.signals.update_hatch.connect(self.hatch_status)
 
-    # update pad lock icon based on signal emitted
+    # update pad lock icon based on signal emitted | [0] lock & [1] unlock
     def lock_status(self, stat):
         if stat:
             self.c_lock_stat.setPixmap(self.punlock)
         else:
             self.c_lock_stat.setPixmap(self.plock)
 
-    # update hatch status QLabel
+    # update hatch status QLabel | [1] open & [0] closed
     def hatch_status(self, stat):
         if stat:
             self.c_hatch_stat.setText("OPEN")
@@ -313,9 +312,9 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
 
 
 # All signals must inherit from QObject class
-class Communicate(QObject):  # closed and locked
-    update_lock = Signal(bool)  # 0 lock and 1 unlock
-    update_hatch = Signal(bool)  # 1 open & 0 closed
+class Communicate(QObject):
+    update_lock = Signal(bool)
+    update_hatch = Signal(bool)
 
 
 # Lock Update Thread Worker class
@@ -327,21 +326,16 @@ class LockThread(QThread):
 
     # Infinite lock status background checking loop
     def run(self):
-        # c_lock_status = False
-        # c_hatch_status = False
         curr_lock_status = False
         curr_hatch_status = False
         while True:
-            # c_lock_status = not c_lock_status
-            # c_hatch_status = not c_hatch_status
-            # time.sleep(1)
-            # self.signals.update_lock.emit(c_lock_status)
-            # self.signals.update_hatch.emit(c_hatch_status)
             message = eval(client_server.recv(1024).decode())
             if len(message) != 0:
+                # Lock status update signal
                 if curr_lock_status != bool(message[0]):
                     curr_lock_status = bool(message[0])
                     self.signals.update_lock.emit(curr_lock_status)
+                # hatch status update signal
                 if curr_hatch_status != bool(message[1]):
                     curr_hatch_status = bool(message[1])
                     self.signals.update_hatch.emit(curr_hatch_status)
@@ -421,8 +415,9 @@ def main():
     sys.exit(app.exec_())  # exit
 
 
-# Press the green button in the gutter to run the script.
+# main code block
 if __name__ == '__main__':
+    # Command Line Initalization & Socket Connection
     if len(sys.argv) == 5:
         if (sys.argv[1] == '-sip') and (sys.argv[3] == '-sp'):
             server_ip = sys.argv[2]
