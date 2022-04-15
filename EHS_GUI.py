@@ -1,6 +1,7 @@
 import requests
 import sys
 import time
+import socket
 from psygnal import Signal
 from bs4 import BeautifulSoup
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVBoxLayout, QLabel, \
@@ -8,14 +9,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVB
     QFormLayout, QAbstractItemView
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt, QThread, QCoreApplication, QObject
-import RPi.GPIO as gpio
-import mariadb
 
-gpio.setmode(gpio.BCM)
-gpio.setup(18,gpio.IN)
-
+client_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+valid = False
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
 
+# 2 hatch status colors
+Red = 'rgb(255, 0, 0)'
+Green = 'rgb(0, 153, 0)'
 # 5 Primary VT Colors
 Burnt_orange = 'rgb(232, 119, 34)'
 Burnt_orange_web = 'rgb(198, 70, 0)'
@@ -40,6 +41,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     def home(self):
         self.show_vt()  # VT Logo Qt Label Widget
         self.lock_stat()  # Lock status Qt Label Widget
+        self.hatch_stat()  # Hatch status Qt Label Widget
         # widget objects
         self.prompt = QLabel("Select Building Name: ")  # label above the combobox
         self.button = QPushButton('OK')  # button
@@ -171,7 +173,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         # |          [Building]            |
         # |______[Table Information]_______|
         # |      [Legend Information]      |
-        # |_________|___________|__[Quit]__|
+        # |[Lock][Hatch]________|__[QUIT]__|
         hbox.addStretch(2)
         hbox.addWidget(self.image_label)
         hbox.addStretch(2)
@@ -183,6 +185,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.scroll)
         vbox.addStretch(2)
         hbox1.addWidget(self.c_lock_stat)
+        hbox1.addWidget(self.c_hatch_stat)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -225,7 +228,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         # |__________[ComboBox]____________|
         # |         |           |          |
         # |         |           |          |
-        # |_________|___________|_[Button]_|
+        # |[Lock][Hatch]________|_[Button]_|
         hbox.addStretch(2)
         hbox.addWidget(self.image_label)
         hbox.addStretch(2)
@@ -235,6 +238,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.combo)
         vbox.addStretch(2)
         hbox1.addWidget(self.c_lock_stat)
+        hbox1.addWidget(self.c_hatch_stat)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -266,6 +270,12 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(pixmap)
 
+    # ------------------------ LOCK & HATCH STATUS FUNCTIONS --------------------------
+    # hatch status items
+    def hatch_stat(self):
+        self.c_hatch_stat = QLabel("CLOSE")
+        self.setStyleSheet("QLabel {color: %s}" % Red)
+
     # lock status items **** Loading of images
     def lock_stat(self):
         locked = ('locked.png')
@@ -283,21 +293,29 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.worker.moveToThread(self.thread)
         # connect signal with pad lock updating function
         self.worker.signals.update_lock.connect(self.lock_status)
+        self.worker.signals.update_hatch.connect(self.hatch_status)
 
     # update pad lock icon based on signal emitted
     def lock_status(self, stat):
-        print("Update lock status")
         if stat:
             self.c_lock_stat.setPixmap(self.punlock)
-            print('unlocked')
         else:
             self.c_lock_stat.setPixmap(self.plock)
-            print('locked')
+
+    # update hatch status QLabel
+    def hatch_status(self, stat):
+        if stat:
+            self.c_hatch_stat.setText("OPEN")
+            self.c_hatch_stat.setStyleSheet("QLabel {color: %s}" % Green)
+        else:
+            self.c_hatch_stat.setText("CLOSE")
+            self.c_hatch_stat.setStyleSheet("QLabel {color: %s}" % Red)
 
 
 # All signals must inherit from QObject class
-class Communicate(QObject):
-    update_lock = Signal(bool)  # lock update signal
+class Communicate(QObject):  # closed and locked
+    update_lock = Signal(bool)  # 0 lock and 1 unlock
+    update_hatch = Signal(bool)  # 1 open & 0 closed
 
 
 # Lock Update Thread Worker class
@@ -309,13 +327,24 @@ class LockThread(QThread):
 
     # Infinite lock status background checking loop
     def run(self):
-        c_lock_status = False
-        current_status = c_lock_status
+        # c_lock_status = False
+        # c_hatch_status = False
+        curr_lock_status = False
+        curr_hatch_status = False
         while True:
-            c_lock_status = gpio.input(18) == gpio.HIGH 
-            if current_status != c_lock_status:
-                current_status = c_lock_status
-                self.signals.update_lock.emit(c_lock_status)
+            # c_lock_status = not c_lock_status
+            # c_hatch_status = not c_hatch_status
+            # time.sleep(1)
+            # self.signals.update_lock.emit(c_lock_status)
+            # self.signals.update_hatch.emit(c_hatch_status)
+            message = eval(client_server.recv(1024).decode())
+            if len(message) != 0:
+                if curr_lock_status != bool(message[0]):
+                    curr_lock_status = bool(message[0])
+                    self.signals.update_lock.emit(curr_lock_status)
+                if curr_hatch_status != bool(message[1]):
+                    curr_hatch_status = bool(message[1])
+                    self.signals.update_hatch.emit(curr_hatch_status)
 
 
 # query EHS website for content
@@ -385,15 +414,33 @@ def date():
     return last_update_date
 
 
-def main():                   
+def main():
     app = QApplication(sys.argv)
     win = EHSWindow()  # window object
-    #win.showFullScreen()  # Display GUI Full screen
-    win.show()
+    win.showFullScreen()  # Display GUI Full screen
     sys.exit(app.exec_())  # exit
-    
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    if len(sys.argv) == 5:
+        if (sys.argv[1] == '-sip') and (sys.argv[3] == '-sp'):
+            server_ip = sys.argv[2]
+            server_port = sys.argv[4]
+            try:
+                client_server.connect((server_ip, int(server_port)))
+                print('Connected to Server....')
+                valid = True
+            except socket.gaierror:
+                print('Error: Invalid host name or port # [Program Termination]')
+                sys.exit()
+            except ConnectionRefusedError:
+                print('Error: Unable to Connect [Program Termination]')
+                sys.exit()
+            except ValueError:
+                print('Error: Expecting a value for port number [Program Termination]')
+                sys.exit()
+        else:
+            print('Error: Invalid Entries')
+            sys.exit()
     main()
