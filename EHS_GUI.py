@@ -273,7 +273,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     # hatch status items
     def hatch_stat(self):
         self.c_hatch_stat = QLabel("CLOSE")
-        self.setStyleSheet("QLabel {color: %s}" % Red)
+        self.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
 
     # lock status items **** Loading of images
     def lock_stat(self):
@@ -305,10 +305,10 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     def hatch_status(self, stat):
         if stat:
             self.c_hatch_stat.setText("OPEN")
-            self.c_hatch_stat.setStyleSheet("QLabel {color: %s}" % Green)
+            self.c_hatch_stat.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Green)
         else:
             self.c_hatch_stat.setText("CLOSE")
-            self.c_hatch_stat.setStyleSheet("QLabel {color: %s}" % Red)
+            self.c_hatch_stat.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
 
 
 # All signals must inherit from QObject class
@@ -424,8 +424,6 @@ if __name__ == '__main__':
             server_port = sys.argv[4]
             try:
                 client_server.connect((server_ip, int(server_port)))
-                print('Connected to Server....')
-                valid = True
             except socket.gaierror:
                 print('Error: Invalid host name or port # [Program Termination]')
                 sys.exit()
@@ -435,6 +433,7 @@ if __name__ == '__main__':
             except ValueError:
                 print('Error: Expecting a value for port number [Program Termination]')
                 sys.exit()
+            print('Connected to Server....')
         else:
             print('Error: Invalid Entries')
             sys.exit()
