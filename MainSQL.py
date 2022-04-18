@@ -86,7 +86,6 @@ try:
         host="127.0.0.1",
         port=3306,
         database="auth"
-
     )
     
     gpio.setmode(gpio.BCM)
@@ -114,8 +113,9 @@ except mariadb.Error as e:
     print(f"Error connecting to MariaDB Platform: {e}")
     sys.exit(1)
 
-T1 = Thread(target=lock)
-T2 = Thread(target=hatch)
+T1 = Thread(target = lock)
+T2 = Thread(target = hatch)
+T2.setDaemon(True)
 
 T1.start()
 T2.start()
