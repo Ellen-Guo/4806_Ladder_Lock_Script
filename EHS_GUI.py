@@ -422,6 +422,7 @@ if __name__ == '__main__':
         if (sys.argv[1] == '-sip') and (sys.argv[3] == '-sp'):
             server_ip = sys.argv[2]
             server_port = sys.argv[4]
+            # TCP Socket Connection
             try:
                 client_server.connect((server_ip, int(server_port)))
             except socket.gaierror:
@@ -434,7 +435,10 @@ if __name__ == '__main__':
                 print('Error: Expecting a value for port number [Program Termination]')
                 sys.exit()
             print('Connected to Server....')
+            main()  # main EHS GUI Qt Widget Fucntion
         else:
             print('Error: Invalid Entries')
             sys.exit()
-    main()
+    else:
+            print('Error: Invalid Entries')
+            sys.exit()
