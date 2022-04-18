@@ -418,13 +418,13 @@ def main():
 # main code block
 if __name__ == '__main__':
     # Command Line Initalization & Socket Connection
-    if len(sys.argv) == 5:
-        if (sys.argv[1] == '-sip') and (sys.argv[3] == '-sp'):
+    if len(sys.argv) == 3:
+        if (sys.argv[1] == '-sip'):
             server_ip = sys.argv[2]
-            server_port = sys.argv[4]
             # TCP Socket Connection
             try:
-                client_server.connect((server_ip, int(server_port)))
+                client_server.connect((server_ip, 1234))
+                client_server.connect((server_ip, 1235))
             except socket.gaierror:
                 print('Error: Invalid host name or port # [Program Termination]')
                 sys.exit()

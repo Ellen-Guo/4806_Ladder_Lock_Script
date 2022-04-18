@@ -7,14 +7,12 @@ import threading as Thread
 
 global hatch_status, locked
 
-def lock():
+def lock(cur):
     global hatch_status, locked
     #Lock status boolan
     locked = 1
 
-    # Get Cursor
     broken = False
-    cur = conn.cursor()
     locked = 0
     while broken == False:
         swiped = False    
@@ -65,6 +63,7 @@ def hatch():
     global hatch_status, locked
     cur_hatch_status = 0
     cur_lock_status = 0
+    # accept client connection
     client, addr = sock.accept()
     print(addr)
 
@@ -113,7 +112,10 @@ except mariadb.Error as e:
     print(f"Error connecting to MariaDB Platform: {e}")
     sys.exit(1)
 
-T1 = Thread(target = lock)
+# Get Cursor
+cur = conn.cursor()
+
+T1 = Thread(target = lock(cur))
 T2 = Thread(target = hatch)
 T2.setDaemon(True)
 
