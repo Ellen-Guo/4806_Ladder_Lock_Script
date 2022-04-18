@@ -424,7 +424,7 @@ if __name__ == '__main__':
             # TCP Socket Connection
             try:
                 client_server.connect((server_ip, 1234))
-                client_server.connect((server_ip, 1235))
+                # client_server.connect((server_ip, 1235))
             except socket.gaierror:
                 print('Error: Invalid host name or port # [Program Termination]')
                 sys.exit()
