@@ -273,7 +273,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     # hatch status items
     def hatch_stat(self):
         self.c_hatch_stat = QLabel("CLOSE")
-        self.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
+        self.c_hatch_stat.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
 
     # lock status items **** Loading of images
     def lock_stat(self):
