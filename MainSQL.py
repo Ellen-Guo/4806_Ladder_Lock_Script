@@ -3,6 +3,80 @@ import sys
 import RPi.GPIO as gpio
 import socket
 import subprocess
+import threading as Thread
+
+global hatch_status, locked
+
+def lock():
+    global hatch_status, locked
+    #Lock status boolan
+    locked = 1
+
+    # Get Cursor
+    broken = False
+    cur = conn.cursor()
+    locked = 0
+    while broken == False:
+        swiped = False    
+        id = input("Enter ID: ")
+        
+
+        #TODO: fix 0 length
+        if (id[0] == ';'):
+            id = id[1:10]
+            swiped = True
+
+        if swiped == True:
+            query = "SELECT COUNT('id') FROM swipeid WHERE id=?"
+        else:
+            query = "SELECT COUNT('id') FROM numid WHERE id=?"
+
+        rows = cur.execute(query,(id,))
+        
+        #lock status, hatch
+        #1 is open
+        #0 is locked
+
+        for (res) in cur:
+            if res[0] == 0:
+                print("Access Denied")
+
+            else: 
+                print("Access Granted")
+                if hatch_status == 0: #closed
+                    if locked == 1: #unlocked
+                        locked = 0
+                    else:            #locked
+                        locked = 1
+                else:
+                    locked = 1
+
+        if locked == 1:
+            gpio.output(26,gpio.HIGH)
+            gpio.output(21,gpio.HIGH)
+            gpio.output(20,gpio.HIGH)
+        else:
+            gpio.output(26,gpio.LOW)
+            gpio.output(21,gpio.LOW)
+            gpio.output(20,gpio.LOW)
+
+
+def hatch():
+    global hatch_status, locked
+    cur_hatch_status = 0
+    cur_lock_status = 0
+    client, addr = sock.accept()
+    print(addr)
+
+    while True:
+        hatch_status = gpio.input(18)
+        if (cur_hatch_status != hatch_status) or (cur_lock_status != locked):
+            cur_hatch_status = hatch_status
+            cur_lock_status = locked
+            packet = str([locked, hatch_status])
+            print(packet)
+            client.send(packet.encode())
+
 # Connect to MariaDB Platform
 gpio.cleanup()
 try:
@@ -39,65 +113,9 @@ try:
 except mariadb.Error as e:
     print(f"Error connecting to MariaDB Platform: {e}")
     sys.exit(1)
-    
-#Lock status boolan
-locked = 1
 
-# Get Cursor
-broken = False
-client, addr = sock.accept()
-print(addr)
-cur = conn.cursor()
-locked = 0
-while broken == False:
-    hatchStatus = gpio.input(18)
-    print(hatchStatus)
-    swiped = False    
-    id = input("Enter ID: ")
-    hatchStatus = gpio.input(18)
+T1 = Thread(target=lock)
+T2 = Thread(target=hatch)
 
-    #TODO: fix 0 length
-    if (id[0] == ';'):
-        id = id[1:10]
-        swiped = True
-
-    if swiped == True:
-        query = "SELECT COUNT('id') FROM swipeid WHERE id=?"
-    else:
-        query = "SELECT COUNT('id') FROM numid WHERE id=?"
-
-    rows = cur.execute(query,(id,))
-    
-    #lock status, hatch
-    #1 is open
-    #0 is locked
-
-    for (res) in cur:
-        if res[0] == 0:
-            print("Access Denied")
-
-        else: 
-            print("Access Granted")
-            hatchStatus = gpio.input(18)
-            if hatchStatus == 0: #closed
-                if locked == 1: #unlocked
-                    locked = 0
-                else:            #locked
-                    locked = 1
-            else:
-                locked = 1
-
-    if locked == 1:
-        gpio.output(26,gpio.HIGH)
-        gpio.output(21,gpio.HIGH)
-        gpio.output(20,gpio.HIGH)
-    else:
-        gpio.output(26,gpio.LOW)
-        gpio.output(21,gpio.LOW)
-        gpio.output(20,gpio.LOW)
-
-    hatchStatus = gpio.input(18)
-    packet = str([locked, hatchStatus])
-    print(packet)
-    client.send(packet.encode())
-            
+T1.start()
+T2.start()
