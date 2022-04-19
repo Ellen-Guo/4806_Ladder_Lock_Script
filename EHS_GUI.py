@@ -184,7 +184,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.scroll)
         vbox.addStretch(2)
         hbox1.addWidget(self.c_lock_stat)
-        hbox1.addWidget(self.c_hatch_stat)
+        hbox1.addWidget(self.c_lock_word)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -237,7 +237,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.combo)
         vbox.addStretch(2)
         hbox1.addWidget(self.c_lock_stat)
-        hbox1.addWidget(self.c_hatch_stat)
+        hbox1.addWidget(self.c_lock_word)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -269,12 +269,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(pixmap)
 
-    # ------------------------ LOCK & HATCH STATUS FUNCTIONS --------------------------
-    # hatch status items
-    def hatch_stat(self):
-        self.c_hatch_stat = QLabel("CLOSE")
-        self.c_hatch_stat.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
-
+    # ------------------------ LOCK STATUS FUNCTIONS --------------------------
     # lock status items **** Loading of images
     def lock_stat(self):
         locked = ('locked.png')
@@ -283,6 +278,9 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.plock = QPixmap(locked).scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.punlock = QPixmap(unlocked).scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.c_lock_stat.setPixmap(self.plock)
+        # lock QLabel item
+        self.c_lock_word = QLabel("LOCKED")
+        self.c_lock_word.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
 
     # Instantiate background running QThread for lock update
     def lock_update(self):
@@ -292,30 +290,23 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.worker.moveToThread(self.thread)
         # connect signal with pad lock updating function
         self.worker.signals.update_lock.connect(self.lock_status)
-        self.worker.signals.update_hatch.connect(self.hatch_status)
 
     # update pad lock icon based on signal emitted | [0] lock & [1] unlock
     def lock_status(self, stat):
         if stat:
             self.c_lock_stat.setPixmap(self.punlock)
+            self.c_lock_word.setText("UNLOCKED")
+            self.c_lock_word.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Green)
         else:
             self.c_lock_stat.setPixmap(self.plock)
+            self.c_lock_word.setText("LOCKED")
+            self.c_lock_word.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
 
-    # update hatch status QLabel | [1] open & [0] closed
-    def hatch_status(self, stat):
-        if stat:
-            self.c_hatch_stat.setText("OPEN")
-            self.c_hatch_stat.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Green)
-        else:
-            self.c_hatch_stat.setText("CLOSE")
-            self.c_hatch_stat.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
 
 
 # All signals must inherit from QObject class
 class Communicate(QObject):
     update_lock = Signal(bool)
-    update_hatch = Signal(bool)
-
 
 # Lock Update Thread Worker class
 class LockThread(QThread):
@@ -327,7 +318,6 @@ class LockThread(QThread):
     # Infinite lock status background checking loop
     def run(self):
         curr_lock_status = False
-        curr_hatch_status = False
         while True:
             message = eval(client_server.recv(1024).decode())
             if len(message) != 0:
@@ -335,10 +325,6 @@ class LockThread(QThread):
                 if curr_lock_status != bool(message[0]):
                     curr_lock_status = bool(message[0])
                     self.signals.update_lock.emit(curr_lock_status)
-                # hatch status update signal
-                if curr_hatch_status != bool(message[1]):
-                    curr_hatch_status = bool(message[1])
-                    self.signals.update_hatch.emit(curr_hatch_status)
 
 
 # query EHS website for content
