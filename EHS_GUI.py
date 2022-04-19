@@ -29,7 +29,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     # Main Window Class Constructor
     def __init__(self):
         super().__init__()
-        self.title = "EHS Safety Application"
+        self.title = "EHS Safety Application | Pad & Swipe"
         self.setWindowTitle(self.title)
         # Evoke main EHS GUI code
         self.home()
@@ -40,7 +40,6 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     def home(self):
         self.show_vt()  # VT Logo Qt Label Widget
         self.lock_stat()  # Lock status Qt Label Widget
-        self.hatch_stat()  # Hatch status Qt Label Widget
         # widget objects
         self.prompt = QLabel("Select Building Name: ")  # label above the combobox
         self.button = QPushButton('OK')  # button
@@ -319,11 +318,11 @@ class LockThread(QThread):
     def run(self):
         curr_lock_status = False
         while True:
-            message = eval(client_server.recv(1024).decode())
+            message = client_server.recv(1024).decode()
             if len(message) != 0:
                 # Lock status update signal
-                if curr_lock_status != bool(message[0]):
-                    curr_lock_status = bool(message[0])
+                if curr_lock_status != bool(int(message)):
+                    curr_lock_status = bool(int(message))
                     self.signals.update_lock.emit(curr_lock_status)
 
 
@@ -410,7 +409,6 @@ if __name__ == '__main__':
             # TCP Socket Connection
             try:
                 client_server.connect((server_ip, 1234))
-                # client_server.connect((server_ip, 1235))
             except socket.gaierror:
                 print('Error: Invalid host name or port # [Program Termination]')
                 sys.exit()
