@@ -29,7 +29,8 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     # Main Window Class Constructor
     def __init__(self):
         super().__init__()
-        self.title = "EHS Safety Application | Pad & Swipe"
+        # self.title = "EHS Safety Application"
+        self.title = "Pad & Swipe EHS Application"
         self.setWindowTitle(self.title)
         # Evoke main EHS GUI code
         self.home()
@@ -49,11 +50,12 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         for i in buildings:
             self.combo.addItem(i)
         # ********* Setting Color ***************
-        self.prompt.setStyleSheet("QLabel {color: %s}" % Chicago_maroon)
-        self.button.setStyleSheet("QPushButton {color: %s}" % Chicago_maroon)
+        self.prompt.setStyleSheet("QLabel {color: %s; font-size: 12pt}" % Chicago_maroon)
+        self.button.setStyleSheet("QPushButton {color: %s; font-size: 12pt}" % Chicago_maroon)
         self.combo.setStyleSheet("""QComboBox {
         selection-background-color: %s; 
-        selection-color: %s;}""" % (Burnt_orange, Yardline_white))
+        selection-color: %s;
+        font-size: 12pt}""" % (Burnt_orange, Yardline_white))
         # ********* GUI Homepage Layout **********
         self.home_screen()
 
@@ -130,7 +132,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         # QScrollArea for better viewing of legend information
         for n in legend_list:
             n.setFont(QFont('Times'))
-            n.setStyleSheet("QLabel {color: rgb(255, 255, 255)}")
+            n.setStyleSheet("QLabel {color: %s; font-size: 12pt}" % Yardline_white)
             form_layout.addRow(n)
         self.group_box.setLayout(form_layout)
         self.scroll.setWidget(self.group_box)
@@ -143,7 +145,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         # Row & Column Count for Qt Table
         self.table.setRowCount(2)
         self.table.setColumnCount(5)
-        self.table.setFixedHeight(62)
+        self.table.setFixedHeight(124)
         # Place parsed information into table
         for i in range(c-1):
             self.table.setItem(0, i, QTableWidgetItem(types[i]))
@@ -155,12 +157,13 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         # ********* Setting Color ***************
-        self.building_name.setStyleSheet("QLabel {color: %s}" % Burnt_orange_web)
-        self.leg.setStyleSheet("QLabel {color: %s}" % Burnt_orange_web)
-        self.button.setStyleSheet("QPushButton {color: %s}" % Burnt_orange_web)
+        self.building_name.setStyleSheet("QLabel {color: %s; font-size: 12pt}" % Burnt_orange_web)
+        self.leg.setStyleSheet("QLabel {color: %s; font-size: 12pt}" % Burnt_orange_web)
+        self.button.setStyleSheet("QPushButton {color: %s; font-size: 12pt}" % Burnt_orange_web)
         self.table.setStyleSheet("""QTableWidget {
         background-color: %s;
-        color: %s}""" % (Chicago_maroon, Yardline_white))
+        color: %s; 
+        font-size: 12pt}""" % (Chicago_maroon, Yardline_white))
         self.group_box.setStyleSheet("""QGroupBox {
         background-color: %s; 
         color: %s}""" % (Chicago_maroon, Yardline_white))
@@ -204,11 +207,12 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         for i in buildings:
             self.combo.addItem(i)
         # ********* Setting Color ***************
-        self.prompt.setStyleSheet("QLabel {color: %s}" % Chicago_maroon)
-        self.button.setStyleSheet("QPushButton {color: %s}" % Chicago_maroon)
+        self.prompt.setStyleSheet("QLabel {color: %s; font-size: 12pt}" % Chicago_maroon)
+        self.button.setStyleSheet("QPushButton {color: %s; font-size: 12pt}" % Chicago_maroon)
         self.combo.setStyleSheet("""QComboBox {
         selection-background-color: %s; 
-        selection-color: %s}""" % (Burnt_orange, Yardline_white))
+        selection-color: %s;
+        font-size: 12pt}""" % (Burnt_orange, Yardline_white))
         # ********* GUI Homepage Layout **********
         self.home_screen()
 
