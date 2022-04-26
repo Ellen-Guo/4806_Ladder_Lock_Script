@@ -1,12 +1,16 @@
 import requests
 import sys
+import socket
+from psygnal import Signal
 from bs4 import BeautifulSoup
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QVBoxLayout, QLabel, \
     QComboBox, QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox, QScrollArea, \
     QFormLayout, QAbstractItemView
 from PyQt5.QtGui import QFont, QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, QCoreApplication, QObject
 
+client_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+valid = False
 EHS_url = 'https://www.ehss.vt.edu/programs/ROOF_access_chart_050916.php'
 
 # 2 hatch status colors
@@ -25,15 +29,18 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
     # Main Window Class Constructor
     def __init__(self):
         super().__init__()
-        self.title = "EHS Safety Application"
+        # self.title = "EHS Safety Application"
+        self.title = "Pad & Swipe EHS Application"
         self.setWindowTitle(self.title)
         # Evoke main EHS GUI code
         self.home()
+        # Evoke background lock status update thread
+        self.lock_update()
 
     # EHS GUI main app page **** Building Selection ****
     def home(self):
         self.show_vt()  # VT Logo Qt Label Widget
-        # self.lock_stat()  # Lock status Qt Label Widget
+        self.lock_stat()  # Lock status Qt Label Widget
         # widget objects
         self.prompt = QLabel("Select Building Name: ")  # label above the combobox
         self.button = QPushButton('OK')  # button
@@ -137,7 +144,7 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         # Row & Column Count for Qt Table
         self.table.setRowCount(2)
         self.table.setColumnCount(5)
-        self.table.setFixedHeight(124)  #### change to fix table height ####
+        self.table.setFixedHeight(62)
         # Place parsed information into table
         for i in range(c-1):
             self.table.setItem(0, i, QTableWidgetItem(types[i]))
@@ -154,11 +161,10 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         self.button.setStyleSheet("QPushButton {color: %s}" % Burnt_orange_web)
         self.table.setStyleSheet("""QTableWidget {
         background-color: %s;
-        color: %s; 
-        font-size: 12pt}""" % (Chicago_maroon, Yardline_white))
+        color: %s;}""" % (Chicago_maroon, Yardline_white))
         self.group_box.setStyleSheet("""QGroupBox {
         background-color: %s; 
-        color: %s}""" % (Chicago_maroon, Yardline_white))
+        color: %s;}""" % (Chicago_maroon, Yardline_white))
         # ********* GUI Info Page Layout **********
         # _________________________________
         # |         | [VT Logo] |          |
@@ -177,6 +183,8 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.leg)
         vbox.addWidget(self.scroll)
         vbox.addStretch(2)
+        hbox1.addWidget(self.c_lock_stat)
+        hbox1.addWidget(self.c_lock_word)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -228,6 +236,8 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         vbox.addWidget(self.prompt)
         vbox.addWidget(self.combo)
         vbox.addStretch(2)
+        hbox1.addWidget(self.c_lock_stat)
+        hbox1.addWidget(self.c_lock_word)
         hbox1.addStretch(2)
         hbox1.addWidget(self.button)
         vbox.addLayout(hbox1)
@@ -258,6 +268,63 @@ class EHSWindow(QMainWindow):  # EHS GUI Class
         pixmap = QPixmap(image_path)
         pixmap = pixmap.scaled(300, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(pixmap)
+
+    # ------------------------ LOCK STATUS FUNCTIONS --------------------------
+    # lock status items **** Loading of images
+    def lock_stat(self):
+        locked = ('locked.png')
+        unlocked = ('unlocked.png')
+        self.c_lock_stat = QLabel()
+        self.plock = QPixmap(locked).scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.punlock = QPixmap(unlocked).scaled(50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.c_lock_stat.setPixmap(self.plock)
+        # lock QLabel item
+        self.c_lock_word = QLabel("LOCKED")
+        self.c_lock_word.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
+
+    # Instantiate background running QThread for lock update
+    def lock_update(self):
+        QCoreApplication.processEvents()
+        self.thread = QThread()
+        self.worker = LockThread()
+        self.worker.moveToThread(self.thread)
+        # connect signal with pad lock updating function
+        self.worker.signals.update_lock.connect(self.lock_status)
+
+    # update pad lock icon based on signal emitted | [0] lock & [1] unlock
+    def lock_status(self, stat):
+        if stat:
+            self.c_lock_stat.setPixmap(self.punlock)
+            self.c_lock_word.setText("UNLOCKED")
+            self.c_lock_word.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Green)
+        else:
+            self.c_lock_stat.setPixmap(self.plock)
+            self.c_lock_word.setText("LOCKED")
+            self.c_lock_word.setStyleSheet("QLabel {color: %s; font-weight: bold; font-size: 15pt}" % Red)
+
+
+
+# All signals must inherit from QObject class
+class Communicate(QObject):
+    update_lock = Signal(bool)
+
+# Lock Update Thread Worker class
+class LockThread(QThread):
+    def __init__(self, parent=None):
+        QThread.__init__(self)
+        self.signals = Communicate()
+        self.start()
+
+    # Infinite lock status background checking loop
+    def run(self):
+        curr_lock_status = False
+        while True:
+            message = client_server.recv(1024).decode()
+            if len(message) != 0:
+                # Lock status update signal
+                if curr_lock_status != bool(int(message)):
+                    curr_lock_status = bool(int(message))
+                    self.signals.update_lock.emit(curr_lock_status)
 
 
 # query EHS website for content
@@ -336,5 +403,27 @@ def main():
 
 # main code block
 if __name__ == '__main__':
-    # main EHS GUI function
-    main()
+    # Command Line Initalization & Socket Connection
+    if len(sys.argv) == 3:
+        if (sys.argv[1] == '-sip'):
+            server_ip = sys.argv[2]
+            # TCP Socket Connection
+            try:
+                client_server.connect((server_ip, 1234))
+            except socket.gaierror:
+                print('Error: Invalid host name or port # [Program Termination]')
+                sys.exit()
+            except ConnectionRefusedError:
+                print('Error: Unable to Connect [Program Termination]')
+                sys.exit()
+            except ValueError:
+                print('Error: Expecting a value for port number [Program Termination]')
+                sys.exit()
+            print('Connected to Server....')
+            main()  # main EHS GUI Qt Widget Fucntion
+        else:
+            print('Error: Invalid Entries')
+            sys.exit()
+    else:
+            print('Error: Invalid Entries')
+            sys.exit()
