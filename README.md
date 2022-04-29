@@ -1,6 +1,6 @@
 # Ladder_Lock_Server
 
-To execute the EHS GUI code python and the following python packets must be installed:
+To execute the EHS GUI code, install python and the following python packets:
 <br>    - requests
 <br>    - bs4
 <br>    - PyQt5
